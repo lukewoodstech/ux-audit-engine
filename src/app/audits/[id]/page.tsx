@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createServiceSupabaseClient } from "@/lib/supabase/server";
 
 type AuditPageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 function severityLabel(severity: number) {
@@ -32,12 +32,13 @@ function severityBadgeClass(severity: number) {
 }
 
 export default async function AuditDetailPage({ params }: AuditPageProps) {
+  const { id } = await params;
   const supabase = createServiceSupabaseClient();
 
   const { data: audit, error: auditError } = await supabase
     .from("audits")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (auditError || !audit) {
@@ -47,7 +48,7 @@ export default async function AuditDetailPage({ params }: AuditPageProps) {
   const { data: items } = await supabase
     .from("audit_items")
     .select("*")
-    .eq("audit_id", params.id)
+    .eq("audit_id", id)
     .order("severity", { ascending: false });
 
   return (
