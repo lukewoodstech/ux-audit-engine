@@ -44,8 +44,9 @@ export async function POST(req: NextRequest) {
     });
 
   if (uploadResult.error) {
+    console.error("[audit] storage upload error:", uploadResult.error);
     return NextResponse.json(
-      { error: "Failed to upload screenshot" },
+      { error: "Failed to upload screenshot", detail: uploadResult.error.message },
       { status: 500 },
     );
   }
@@ -74,9 +75,10 @@ export async function POST(req: NextRequest) {
       });
 
     if (insertAuditError) {
+      console.error("[audit] audits insert error:", insertAuditError);
       await cleanupUploadedFile();
       return NextResponse.json(
-        { error: "Failed to save audit summary" },
+        { error: "Failed to save audit summary", detail: insertAuditError.message },
         { status: 500 },
       );
     }
@@ -98,9 +100,10 @@ export async function POST(req: NextRequest) {
         );
 
       if (insertItemsError) {
+        console.error("[audit] audit_items insert error:", insertItemsError);
         await cleanupUploadedFile();
         return NextResponse.json(
-          { error: "Failed to save audit items" },
+          { error: "Failed to save audit items", detail: insertItemsError.message },
           { status: 500 },
         );
       }
@@ -108,9 +111,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ auditId });
   } catch (error) {
+    console.error("[audit] unhandled error:", error);
     await supabase.storage.from("audit-inputs").remove([objectPath]);
     return NextResponse.json(
-      { error: "Failed to run UX audit" },
+      {
+        error: "Failed to run UX audit",
+        detail: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 },
     );
   }
